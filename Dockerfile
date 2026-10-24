@@ -1,21 +1,19 @@
 FROM python:3.12-slim
 
-WORKDIR /app
-
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+WORKDIR /app
+
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && useradd --create-home --shell /usr/sbin/nologin appuser
 
-COPY src ./src
-
-RUN useradd --create-home --shell /bin/bash appuser \
-    && chown -R appuser:appuser /app
+COPY --chown=appuser:appuser src/ ./src/
 
 USER appuser
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "src.app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--access-logfile", "-", "--error-logfile", "-", "src.app:app"]
